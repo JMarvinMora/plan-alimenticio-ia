@@ -1,0 +1,13 @@
+# Ignorar el entorno virtual
+.venv/
+.venv311/
+
+# Ignorar variables de entorno privadas
+.env
+
+# Archivos temporales o caché
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log

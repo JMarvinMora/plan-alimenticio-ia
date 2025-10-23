@@ -1,4 +1,4 @@
-import streamlit as st
+\Scripts\activateimport streamlit as st
 import os
 from dotenv import load_dotenv
 import openai
