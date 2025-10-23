@@ -3,19 +3,31 @@ import os
 from dotenv import load_dotenv
 import openai
 
-# --- CONFIGURACIÓN INICIAL ---
+# --- CONFIGURACIÓN INICIAL Y CARGA DE SECRETOS ---
 
-# Cargar variables de entorno desde el archivo .env
-# La línea "\Scripts\activate" se ha eliminado porque NO es código Python.
+# Cargar variables de entorno desde el archivo .env (solo para desarrollo local)
 load_dotenv(override=True)
+
+# Preferir st.secrets para el despliegue en Streamlit Cloud
+# Usar os.environ.get() como fallback para el desarrollo local con archivo .env
+def get_secret(key):
+    # Intentar leer desde st.secrets (para Streamlit Cloud)
+    if key in st.secrets:
+        return st.secrets[key]
+    # Fallback para leer desde .env (para desarrollo local)
+    return os.environ.get(key)
+
+# Obtener las variables de la aplicación
+GITHUB_TOKEN = get_secret("GITHUB_TOKEN")
+MODEL_NAME = get_secret("GITHUB_MODEL") or "openai/gpt-4o-mini" # Usar valor por defecto si no se encuentra
+API_HOST = get_secret("API_HOST")
 
 # Configurar cliente de IA (usando GitHub Models)
 client = openai.OpenAI(
     base_url="https://models.github.ai/inference",
-    api_key=os.environ.get("GITHUB_TOKEN")
+    # Usamos la variable obtenida arriba, que garantiza el valor
+    api_key=GITHUB_TOKEN
 )
-
-MODEL_NAME = os.environ.get("GITHUB_MODEL", "openai/gpt-4o-mini")
 
 # --- CONFIGURACIÓN DE PÁGINA DE STREAMLIT ---
 
@@ -41,9 +53,9 @@ with st.form("plan_form"):
 # --- LÓGICA DE GENERACIÓN DE PLAN ---
 
 if generar:
-    # Verificación de que el token esté disponible
-    if not os.environ.get("GITHUB_TOKEN"):
-        st.error("⚠️ Error de configuración: El GITHUB_TOKEN no está configurado.")
+    # Ahora verificamos GITHUB_TOKEN directamente
+    if not GITHUB_TOKEN:
+        st.error("⚠️ Error de configuración: El GITHUB_TOKEN no está configurado. Asegúrate de añadirlo en el archivo .env (local) o en los Secrets de Streamlit Cloud (despliegue).")
     else:
         with st.spinner("Generando tu plan alimenticio... 🍽️"):
             prompt = f"""
@@ -75,4 +87,4 @@ if generar:
 
             except Exception as e:
                 # Manejo de errores de la API
-                st.error(f"⚠️ Error al generar el plan. Asegúrate de que el token y el modelo sean correctos. Error: {e}")
+                st.error(f"⚠️ Error al generar el plan. El token parece válido, pero la API falló. Revisa el token o el modelo. Error: {e}")
